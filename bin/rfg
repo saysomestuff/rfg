@@ -1,0 +1,86 @@
+#!/usr/bin/env fish
+# rfg: remote fish gossip
+
+set -g RFG_DIR "$HOME/.local/share/rfg"
+set -g RFG_EXT "txt"
+set -g RFG_OVERWRITE_DEFAULT 0
+set -g RFG_CLIP_CMD ""
+
+function _rfg_usage
+    echo "rfg - remote fish gossip"
+    echo "usage:"
+    echo "  rfg -s KEY TITLE [BODY]"
+    echo "  rfg -r KEY"
+    echo "  rfg -l"
+    echo "  rfg -p"
+    echo "  rfg -y KEY"
+    echo "  rfg -Y"
+end
+
+function _rfg_safe_key --argument-names key
+    echo -n "$key" | string replace -ar '[^A-Za-z0-9_.-]' ''
+end
+
+function _rfg_path_for_key --argument-names key
+    set -l safe (_rfg_safe_key "$key")
+    test -n "$safe"; or exit 2
+    echo -n "$RFG_DIR/$safe.$RFG_EXT"
+end
+
+function _rfg_store --argument-names key title body
+    mkdir -p "$RFG_DIR"
+    set -l path (_rfg_path_for_key "$key")
+    test -e "$path"; and exit 3
+
+    set -l content ""
+    if test -n "$body"
+        set content "$body"
+    else if not isatty stdin
+        set content (cat)
+    end
+
+    begin
+        echo "Title: $title"
+        echo
+        echo -n "$content"
+    end > "$path"
+end
+
+function _rfg_read --argument-names key
+    cat (_rfg_path_for_key "$key")
+end
+
+function _rfg_list
+    ls "$RFG_DIR"/*.txt 2>/dev/null | sed 's#.*/##;s/.txt$//'
+end
+
+function _rfg_pick
+    _rfg_list | fzf
+end
+
+function _rfg_clip_cmd
+    command -q wl-copy; and echo "wl-copy"; and return
+    command -q xclip; and echo "xclip -selection clipboard"; and return
+end
+
+function _rfg_yank --argument-names key
+    set -l cmd (_rfg_clip_cmd)
+    _rfg_read "$key" | eval "$cmd"
+end
+
+switch $argv[1]
+    case store -s
+        _rfg_store $argv[2] $argv[3] $argv[4]
+    case read -r
+        _rfg_read $argv[2]
+    case list -l
+        _rfg_list
+    case pick -p
+        _rfg_pick
+    case yank -y
+        _rfg_yank $argv[2]
+    case yank-last -Y
+        _rfg_yank last
+    case '*'
+        _rfg_usage
+end
