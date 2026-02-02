@@ -2,7 +2,7 @@
 # rfg: remote fish gossip
 
 set -g RFG_DIR "$HOME/.local/share/rfg"
-set -g RFG_EXT "txt"
+set -g RFG_EXT txt
 set -g RFG_OVERWRITE_DEFAULT 0
 set -g RFG_CLIP_CMD ""
 
@@ -43,13 +43,21 @@ function _rfg_store --argument-names key title body
         echo "Title: $title"
         echo
         echo -n "$content"
-    end > "$path"
+    end >"$path"
 end
 
 function _rfg_read --argument-names key
     cat (_rfg_path_for_key "$key")
 end
+function _rfg_rm --argument-names key
+    set -l path (_rfg_path_for_key "$key")
+    if not test -e "$path"
+        echo "no such key: $key" 1>&2
+        exit 2
+    end
 
+    rm -- "$path"
+end
 function _rfg_list
     ls "$RFG_DIR"/*.txt 2>/dev/null | sed 's#.*/##;s/.txt$//'
 end
@@ -59,7 +67,7 @@ function _rfg_pick
 end
 
 function _rfg_clip_cmd
-    command -q wl-copy; and echo "wl-copy"; and return
+    command -q wl-copy; and echo wl-copy; and return
     command -q xclip; and echo "xclip -selection clipboard"; and return
 end
 
@@ -70,17 +78,42 @@ end
 
 switch $argv[1]
     case store -s
+        if test (count $argv) -lt 3
+            _rfg_usage
+            exit 2
+        end
         _rfg_store $argv[2] $argv[3] $argv[4]
+
     case read -r
+        if test (count $argv) -ne 2
+            _rfg_usage
+            exit 2
+        end
         _rfg_read $argv[2]
+
     case list -l
         _rfg_list
+
     case pick -p
         _rfg_pick
+
     case yank -y
+        if test (count $argv) -ne 2
+            _rfg_usage
+            exit 2
+        end
         _rfg_yank $argv[2]
+
     case yank-last -Y
         _rfg_yank last
+
+    case rm -rm
+        if test (count $argv) -ne 2
+            _rfg_usage
+            exit 2
+        end
+        _rfg_rm $argv[2]
+
     case '*'
         _rfg_usage
 end
