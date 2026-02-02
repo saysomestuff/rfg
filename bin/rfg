@@ -1,7 +1,12 @@
 #!/usr/bin/env fish
 # rfg: remote fish gossip
-
+# Default storage directory
 set -g RFG_DIR "$HOME/.local/share/rfg"
+
+# Allow local override via environment
+if set -q RFG_SYNC_DIR
+    set -g RFG_DIR "$RFG_SYNC_DIR"
+end
 set -g RFG_EXT txt
 set -g RFG_OVERWRITE_DEFAULT 0
 set -g RFG_CLIP_CMD ""
