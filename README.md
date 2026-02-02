@@ -5,7 +5,7 @@ A tiny Linux CLI for passing small text snippets between machines using a shared
 `rfg` stores each snippet as a plain text file. If the storage directory is synchronised
 (for example with Syncthing), the snippets appear on your other machines automatically.
 
-Designed for Fish shell users. No daemon, no database, no networking code.
+Designed for Fish shell users, no networking code.
 
 ---
 
@@ -56,7 +56,7 @@ rfg -h
 
 ## Configuration
 
-Edit the config section at the top of the `rfg` script:
+Edit the config section at the top of the `rfg` script *or* set $RFG_SYNC_DIR locally:
 
 ```fish
 set -g RFG_DIR "$HOME/.sync/rfg"
